@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { findUserByPublicId, getUserChats, openPrivateChat } from "../api/api";
 
@@ -6,8 +6,10 @@ function ChatsPage() {
   const [chats, setChats] = useState([]);
   const [searchPublicId, setSearchPublicId] = useState("");
   const [error, setError] = useState("");
-  const user = JSON.parse(localStorage.getItem("user"));
   const navigate = useNavigate();
+  const intervalRef = useRef(null);
+
+  const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     if (!user) {
@@ -16,14 +18,30 @@ function ChatsPage() {
     }
 
     loadChats();
+
+    intervalRef.current = setInterval(() => {
+      loadChats(true);
+    }, 2500);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
   }, []);
 
-  async function loadChats() {
+  async function loadChats(silent = false) {
     try {
       const data = await getUserChats(user.id);
       setChats(data);
+
+      if (!silent) {
+        setError("");
+      }
     } catch (err) {
-      setError(err.message);
+      if (!silent) {
+        setError(err.message);
+      }
     }
   }
 
@@ -31,13 +49,14 @@ function ChatsPage() {
     setError("");
 
     try {
-      const foundUser = await findUserByPublicId(searchPublicId);
+      const foundUser = await findUserByPublicId(searchPublicId.trim());
 
       const chat = await openPrivateChat({
         currentUserId: user.id,
         targetUserPublicId: foundUser.publicId,
       });
 
+      await loadChats(true);
       navigate(`/chats/${chat.id}`);
     } catch (err) {
       setError(err.message);
@@ -51,10 +70,18 @@ function ChatsPage() {
 
   return (
     <div style={{ padding: 24 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          marginBottom: 24,
+          alignItems: "center",
+          gap: 16,
+        }}
+      >
         <div>
-          <h2>Мои чаты</h2>
-          <p>
+          <h2 style={{ margin: 0 }}>Мои чаты</h2>
+          <p style={{ margin: "8px 0 0 0" }}>
             {user?.username} ({user?.publicId})
           </p>
         </div>
@@ -65,7 +92,8 @@ function ChatsPage() {
       </div>
 
       <div style={cardStyle}>
-        <h3>Найти пользователя по publicId</h3>
+        <h3 style={{ marginTop: 0 }}>Найти пользователя по publicId</h3>
+
         <div style={{ display: "flex", gap: 12 }}>
           <input
             value={searchPublicId}
@@ -82,12 +110,19 @@ function ChatsPage() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       <div style={{ marginTop: 24, display: "grid", gap: 12 }}>
-        {chats.map((chat) => (
-          <Link key={chat.chatId} to={`/chats/${chat.chatId}`} style={chatCardStyle}>
-            <strong>{chat.otherUser?.username}</strong>
-            <div>{chat.otherUser?.publicId}</div>
-          </Link>
-        ))}
+        {chats.length === 0 ? (
+          <div style={emptyStyle}>
+            <p style={{ margin: 0 }}>У вас пока нет чатов</p>
+            <p style={{ marginTop: 8, opacity: 0.7 }}>Начните общение</p>
+          </div>
+        ) : (
+          chats.map((chat) => (
+            <Link key={chat.chatId} to={`/chats/${chat.chatId}`} style={chatCardStyle}>
+              <strong>{chat.otherUser?.username}</strong>
+              <div style={{ marginTop: 6 }}>{chat.otherUser?.publicId}</div>
+            </Link>
+          ))
+        )}
       </div>
     </div>
   );
@@ -105,6 +140,14 @@ const chatCardStyle = {
   padding: 16,
   borderRadius: 14,
   boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+};
+
+const emptyStyle = {
+  background: "#fff",
+  padding: 24,
+  borderRadius: 14,
+  boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+  textAlign: "center",
 };
 
 const inputStyle = {
