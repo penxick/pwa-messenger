@@ -21,7 +21,7 @@ function ChatsPage() {
 
     intervalRef.current = setInterval(() => {
       loadChats(true);
-    }, 2500);
+    }, 1500);
 
     return () => {
       if (intervalRef.current) {
