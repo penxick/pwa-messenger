@@ -8,10 +8,23 @@ spring:
     name: messenger
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/PenxMessenger_bd}
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:}
+    url: jdbc:postgresql://localhost:5432/PenxMessenger_bd
+    username: postgres
+    password: 89504164826roman
     driver-class-name: org.postgresql.Driver
+
+  mail:
+    host: ${MAIL_HOST:postbox.cloud.yandex.net}
+    port: ${MAIL_PORT:587}
+    username: ajeomk6kdh39fnctqh4s
+    password: AQVN2LUNRsRpfdndRJzpRUGyI08sczokSIMP_c-c
+    from: ${MAIL_FROM:no-reply@penxio.ru}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
   jpa:
     hibernate:
