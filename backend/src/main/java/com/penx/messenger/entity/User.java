@@ -2,6 +2,7 @@
 package com.penx.messenger.entity;
 
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -31,6 +32,17 @@ public class User {
 
     @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean emailVerified = false;
+
+    // Описание пользователя
+    @Column(length = 500)
+    private String bio;
+
+    // Дата рождения
+    private LocalDate birthDate;
+
+    // Ссылка на аватар
+    @Column(columnDefinition = "TEXT")
+    private String avatarUrl;
 
     public User() {
     }
@@ -105,5 +117,29 @@ public class User {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }

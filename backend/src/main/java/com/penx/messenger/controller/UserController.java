@@ -10,6 +10,8 @@ import com.penx.messenger.dto.UserResponse;
 import com.penx.messenger.entity.User;
 import com.penx.messenger.service.UserService;
 import org.springframework.web.bind.annotation.*;
+import com.penx.messenger.dto.UpdateProfileRequest;
+import com.penx.messenger.dto.UserProfileResponse;
 
 @RestController
 @RequestMapping("/api/users")
@@ -66,4 +68,51 @@ public class UserController {
                 user.getCreatedAt()
         );
     }
+
+        // Возвращает профиль текущего пользователя по id.
+    @GetMapping("/{id}/profile")
+    public UserProfileResponse getProfile(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        return toProfileResponse(user, true);
+    }
+
+    // Возвращает публичный профиль пользователя по id.
+    @GetMapping("/{id}/public-profile")
+    public UserProfileResponse getPublicProfile(@PathVariable Long id) {
+        User user = userService.getUserById(id);
+        return toProfileResponse(user, false);
+    }
+
+    // Обновляет профиль пользователя.
+    @PatchMapping("/{id}/profile")
+    public UserProfileResponse updateProfile(@PathVariable Long id, @RequestBody UpdateProfileRequest request) {
+        User user = userService.updateProfile(
+                id,
+                request.getUsername(),
+                request.getPublicId(),
+                request.getBio(),
+                request.getBirthDate(),
+                request.getAvatarUrl()
+        );
+
+        return toProfileResponse(user, true);
+    }
+
+    private UserProfileResponse toProfileResponse(User user, boolean includeEmail) {
+    UserProfileResponse response = new UserProfileResponse();
+    response.setId(user.getId());
+    response.setPublicId(user.getPublicId());
+    response.setUsername(user.getUsername());
+    response.setBio(user.getBio());
+    response.setBirthDate(user.getBirthDate());
+    response.setAvatarUrl(user.getAvatarUrl());
+    response.setCreatedAt(user.getCreatedAt());
+    response.setEmailVerified(user.isEmailVerified());
+
+    if (includeEmail) {
+        response.setEmail(user.getEmail());
+    }
+
+    return response;
+}
 }

@@ -190,4 +190,38 @@ public class UserService {
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9_]", "");
     }
+        // Возвращает пользователя по внутреннему id.
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+    }
+
+    // Обновляет профиль пользователя.
+    public User updateProfile(Long userId, String username, String publicId, String bio, java.time.LocalDate birthDate, String avatarUrl) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+
+        if (username == null || username.isBlank()) {
+            throw new BadRequestException("Имя пользователя обязательно");
+        }
+
+        if (publicId == null || publicId.isBlank()) {
+            throw new BadRequestException("PublicId обязателен");
+        }
+
+        String normalizedPublicId = normalizePublicId(publicId);
+
+        User existingUser = userRepository.findByPublicId(normalizedPublicId).orElse(null);
+        if (existingUser != null && !existingUser.getId().equals(userId)) {
+            throw new PublicIdAlreadyExistsException("Такой publicId уже занят");
+        }
+
+        user.setUsername(username.trim());
+        user.setPublicId(normalizedPublicId);
+        user.setBio(bio != null ? bio.trim() : null);
+        user.setBirthDate(birthDate);
+        user.setAvatarUrl(avatarUrl);
+
+        return userRepository.save(user);
+    }
 }
