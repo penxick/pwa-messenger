@@ -7,6 +7,7 @@ import com.penx.messenger.dto.ChatResponse;
 import com.penx.messenger.dto.MessageResponse;
 import com.penx.messenger.dto.OpenPrivateChatRequest;
 import com.penx.messenger.dto.SendMessageRequest;
+import com.penx.messenger.dto.UserChatResponse;
 import com.penx.messenger.dto.UserResponse;
 import com.penx.messenger.entity.Chat;
 import com.penx.messenger.entity.ChatMember;
@@ -22,7 +23,6 @@ import com.penx.messenger.repository.ChatRepository;
 import com.penx.messenger.repository.MessageRepository;
 import com.penx.messenger.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import com.penx.messenger.dto.UserChatResponse;
 
 import java.util.List;
 import java.util.Locale;
@@ -122,6 +122,30 @@ public class ChatService {
         return toMessageResponse(message);
     }
 
+    // Возвращает все сообщения чата по chatId.
+    public List<MessageResponse> getChatMessages(long chatId) {
+        Chat chat = chatRepository.findById(chatId)
+                .orElseThrow(() -> new BadRequestException("Чат не найден"));
+
+        return messageRepository.findByChatIdOrderByCreatedAtAsc(requireChatId(chat)).stream()
+                .map(this::toMessageResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Возвращает список всех чатов пользователя.
+    public List<UserChatResponse> getUserChats(long userId) {
+        User currentUser = userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
+
+        List<ChatMember> memberships = chatMemberRepository.findByUserId(requireUserId(currentUser));
+
+        return memberships.stream()
+                .map(ChatMember::getChat)
+                .distinct()
+                .map(chat -> toUserChatResponse(chat, requireUserId(currentUser)))
+                .toList();
+    }
+
     // Ищет уже существующий личный чат между двумя пользователями.
     private Optional<Chat> findExistingPrivateChat(long firstUserId, long secondUserId) {
         List<ChatMember> firstUserMemberships =
@@ -201,6 +225,26 @@ public class ChatService {
         );
     }
 
+    // Преобразует чат в DTO для списка чатов пользователя.
+    private UserChatResponse toUserChatResponse(Chat chat, long currentUserId) {
+        List<ChatMember> members = chatMemberRepository.findByChatId(requireChatId(chat));
+
+        User otherUser = members.stream()
+                .map(ChatMember::getUser)
+                .filter(user -> requireUserId(user) != currentUserId)
+                .findFirst()
+                .orElse(null);
+
+        UserResponse otherUserResponse = otherUser != null ? toUserResponse(otherUser) : null;
+
+        return new UserChatResponse(
+                requireChatId(chat),
+                chat.getType(),
+                chat.getCreatedAt(),
+                otherUserResponse
+        );
+    }
+
     // Преобразует пользователя в безопасный DTO без пароля.
     private UserResponse toUserResponse(User user) {
         return new UserResponse(
@@ -208,7 +252,8 @@ public class ChatService {
                 user.getPublicId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getCreatedAt()
+                user.getCreatedAt(),
+                user.getAvatarUrl()
         );
     }
 
@@ -227,48 +272,5 @@ public class ChatService {
         return value.trim()
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9_]", "");
-    }
-        // Возвращает все сообщения чата по chatId.
-    public List<MessageResponse> getChatMessages(long chatId) {
-        Chat chat = chatRepository.findById(chatId)
-                .orElseThrow(() -> new BadRequestException("Чат не найден"));
-
-        return messageRepository.findByChatIdOrderByCreatedAtAsc(requireChatId(chat)).stream()
-                .map(this::toMessageResponse)
-                .collect(Collectors.toList());
-    }
-
-        // Возвращает список всех чатов пользователя.
-    public List<UserChatResponse> getUserChats(long userId) {
-        User currentUser = userRepository.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException("Пользователь не найден"));
-
-        List<ChatMember> memberships = chatMemberRepository.findByUserId(requireUserId(currentUser));
-
-        return memberships.stream()
-                .map(ChatMember::getChat)
-                .distinct()
-                .map(chat -> toUserChatResponse(chat, requireUserId(currentUser)))
-                .toList();
-    }
-
-        // Преобразует чат в DTO для списка чатов пользователя.
-    private UserChatResponse toUserChatResponse(Chat chat, long currentUserId) {
-        List<ChatMember> members = chatMemberRepository.findByChatId(requireChatId(chat));
-
-        User otherUser = members.stream()
-                .map(ChatMember::getUser)
-                .filter(user -> requireUserId(user) != currentUserId)
-                .findFirst()
-                .orElse(null);
-
-        UserResponse otherUserResponse = otherUser != null ? toUserResponse(otherUser) : null;
-
-        return new UserChatResponse(
-                requireChatId(chat),
-                chat.getType(),
-                chat.getCreatedAt(),
-                otherUserResponse
-        );
     }
 }

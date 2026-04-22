@@ -1,6 +1,5 @@
 package com.penx.messenger.dto;
 
-// DTO ответа с данными пользователя без пароля.
 import java.time.LocalDateTime;
 
 public class UserResponse {
@@ -10,16 +9,18 @@ public class UserResponse {
     private String username;
     private String email;
     private LocalDateTime createdAt;
+    private String avatarUrl;
 
     public UserResponse() {
     }
 
-    public UserResponse(Long id, String publicId, String username, String email, LocalDateTime createdAt) {
+    public UserResponse(Long id, String publicId, String username, String email, LocalDateTime createdAt, String avatarUrl) {
         this.id = id;
         this.publicId = publicId;
         this.username = username;
         this.email = email;
         this.createdAt = createdAt;
+        this.avatarUrl = avatarUrl;
     }
 
     public Long getId() {
@@ -42,6 +43,10 @@ public class UserResponse {
         return createdAt;
     }
 
+    public String getAvatarUrl() {
+        return avatarUrl;
+    }
+
     public void setId(Long id) {
         this.id = id;
     }
@@ -60,5 +65,9 @@ public class UserResponse {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public void setAvatarUrl(String avatarUrl) {
+        this.avatarUrl = avatarUrl;
     }
 }

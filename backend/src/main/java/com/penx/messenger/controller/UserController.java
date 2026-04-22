@@ -61,12 +61,13 @@ public class UserController {
     // Преобразует сущность User в безопасный ответ без пароля.
     private UserResponse toResponse(User user) {
         return new UserResponse(
-                user.getId(),
-                user.getPublicId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getCreatedAt()
-        );
+            user.getId(),
+            user.getPublicId(),
+            user.getUsername(),
+            user.getEmail(),
+            user.getCreatedAt(),
+            user.getAvatarUrl()
+    );
     }
 
         // Возвращает профиль текущего пользователя по id.
