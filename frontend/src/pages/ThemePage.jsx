@@ -216,7 +216,7 @@ function ThemePage() {
 
           <ThemeOption
             title="Черная"
-            circleColor="#071631"
+            circleColor="#000000"
             selected={themeSettings.mode === "black"}
             onClick={() => handlePresetClick("black")}
             palette={palette}

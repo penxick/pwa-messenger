@@ -76,14 +76,6 @@ function buildPalette(mode, customColor = "#e8b8ff") {
   };
 }
 
-function applyThemeToDocument(palette) {
-  document.body.style.margin = "0";
-  document.body.style.background = palette.pageBg;
-  document.body.style.color = palette.text;
-  document.body.style.fontFamily =
-    "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
-}
-
 function ChatsPage() {
   const navigate = useNavigate();
   const intervalRef = useRef(null);
@@ -97,29 +89,54 @@ function ChatsPage() {
   const [chats, setChats] = useState([]);
   const [searchPublicId, setSearchPublicId] = useState("");
   const [error, setError] = useState("");
+  const [myProfile, setMyProfile] = useState(null);
 
-  const user = JSON.parse(localStorage.getItem("user"));
+  const user = JSON.parse(localStorage.getItem("user") || "null");
 
   useEffect(() => {
-    applyThemeToDocument(palette);
+    document.body.style.margin = "0";
+    document.body.style.background = palette.pageBg;
+    document.body.style.color = palette.text;
+    document.body.style.fontFamily =
+      "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   }, [palette]);
 
   useEffect(() => {
-    if (!user) {
+    if (!user?.id) {
       navigate("/login");
       return;
     }
 
+    loadMyProfile();
     loadChats();
 
-    //intervalRef.current = setInterval(() => {
-      //loadChats(true);
-    //}, 1500);
+    intervalRef.current = setInterval(() => {
+      loadChats(true);
+      loadMyProfile(true);
+    }, 1500);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
   }, []);
+
+  async function loadMyProfile(silent = false) {
+    try {
+      const response = await fetch(`http://localhost:8080/api/users/${user.id}/profile`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Не удалось загрузить профиль");
+      }
+
+      setMyProfile(data);
+      if (!silent) setError("");
+    } catch (err) {
+      if (!silent) {
+        console.error(err);
+      }
+    }
+  }
 
   async function loadChats(silent = false) {
     try {
@@ -127,7 +144,7 @@ function ChatsPage() {
       setChats(data);
       if (!silent) setError("");
     } catch (err) {
-      if (!silent) setError(err.message);
+      if (!silent) setError(err.message || "Внутренняя ошибка сервера");
     }
   }
 
@@ -135,7 +152,10 @@ function ChatsPage() {
     setError("");
 
     try {
-      const foundUser = await findUserByPublicId(searchPublicId.trim());
+      const value = searchPublicId.trim();
+      if (!value) return;
+
+      const foundUser = await findUserByPublicId(value);
 
       const chat = await openPrivateChat({
         currentUserId: user.id,
@@ -145,16 +165,18 @@ function ChatsPage() {
       await loadChats(true);
       navigate(`/chats/${chat.id}`);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Внутренняя ошибка сервера");
     }
   }
 
-  const avatarLetter = user?.username?.charAt(0)?.toUpperCase() || "P";
+  const username = myProfile?.username || user?.username || "Пользователь";
+  const avatarUrl = myProfile?.avatarUrl || "";
+  const avatarLetter = username?.charAt(0)?.toUpperCase() || "P";
 
   return (
     <div
       style={{
-        minHeight: "100vh",
+        height: "100dvh",
         background: palette.pageBg,
         display: "flex",
         justifyContent: "center",
@@ -164,14 +186,15 @@ function ChatsPage() {
         style={{
           width: "100%",
           maxWidth: 390,
-          minHeight: "100vh",
+          height: "100dvh",
           background: palette.pageBg,
           color: palette.text,
           borderRadius: 32,
           overflow: "hidden",
           boxSizing: "border-box",
           border: `1px solid ${palette.border}`,
-          position: "relative",
+          display: "flex",
+          flexDirection: "column",
         }}
       >
         <div
@@ -179,6 +202,7 @@ function ChatsPage() {
             padding: "18px 16px 14px",
             borderBottom: `1px solid ${palette.border}`,
             background: palette.headerBg,
+            flexShrink: 0,
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -189,27 +213,59 @@ function ChatsPage() {
                 height: 34,
                 borderRadius: "50%",
                 border: "none",
-                background: "linear-gradient(180deg, #c35bff 0%, #8c14ff 100%)",
-                color: "#fff",
-                fontWeight: 700,
-                fontSize: 18,
+                background: "transparent",
+                padding: 0,
                 cursor: "pointer",
                 flexShrink: 0,
+                overflow: "hidden",
               }}
             >
-              {avatarLetter}
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt="avatar"
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                    display: "block",
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    background: "linear-gradient(180deg, #c35bff 0%, #8c14ff 100%)",
+                    color: "#fff",
+                    fontWeight: 700,
+                    fontSize: 18,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {avatarLetter}
+                </div>
+              )}
             </button>
 
             <div style={{ fontSize: 18, fontWeight: 700 }}>Чаты</div>
           </div>
         </div>
 
-        <div style={{ padding: 10, paddingBottom: 94 }}>
+        <div
+          style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: 10,
+            paddingBottom: 94,
+          }}
+        >
           <div
             style={{
               background: palette.cardBg,
               borderRadius: 14,
-              padding: 0,
               marginBottom: 18,
               border: `1px solid ${palette.border}`,
             }}
@@ -225,6 +281,9 @@ function ChatsPage() {
               <input
                 value={searchPublicId}
                 onChange={(e) => setSearchPublicId(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleSearchAndOpen();
+                }}
                 placeholder="Поиск"
                 style={{
                   flex: 1,
@@ -309,23 +368,37 @@ function ChatsPage() {
                       textAlign: "left",
                     }}
                   >
-                    <div
-                      style={{
-                        width: 48,
-                        height: 48,
-                        borderRadius: "50%",
-                        background: "linear-gradient(180deg, #c35bff 0%, #8c14ff 100%)",
-                        color: "#fff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontWeight: 700,
-                        fontSize: 22,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {otherLetter}
-                    </div>
+                    {otherUser?.avatarUrl ? (
+                      <img
+                        src={otherUser.avatarUrl}
+                        alt="avatar"
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: "50%",
+                          objectFit: "cover",
+                          flexShrink: 0,
+                        }}
+                      />
+                    ) : (
+                      <div
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: "50%",
+                          background: "linear-gradient(180deg, #c35bff 0%, #8c14ff 100%)",
+                          color: "#fff",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          fontWeight: 700,
+                          fontSize: 22,
+                          flexShrink: 0,
+                        }}
+                      >
+                        {otherLetter}
+                      </div>
+                    )}
 
                     <div style={{ minWidth: 0 }}>
                       <div

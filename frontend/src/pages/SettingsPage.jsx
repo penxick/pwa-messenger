@@ -76,13 +76,15 @@ function buildPalette(mode, customColor = "#e8b8ff") {
 
 function SettingsPage() {
   const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user") || "null");
+  const storedUser = JSON.parse(localStorage.getItem("user") || "null");
 
   const [themeSettings] = useState(getSavedThemeSettings());
   const palette = useMemo(
     () => buildPalette(themeSettings.mode, themeSettings.customColor),
     [themeSettings]
   );
+
+  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     document.body.style.margin = "0";
@@ -92,12 +94,39 @@ function SettingsPage() {
       "Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
   }, [palette]);
 
+  useEffect(() => {
+    if (!storedUser?.id) {
+      navigate("/login");
+      return;
+    }
+
+    loadProfile();
+  }, []);
+
+  async function loadProfile() {
+    try {
+      const response = await fetch(`http://localhost:8080/api/users/${storedUser.id}/profile`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Не удалось загрузить профиль");
+      }
+
+      setProfile(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   function handleLogout() {
     localStorage.removeItem("user");
     navigate("/login");
   }
 
-  const avatarLetter = user?.username?.charAt(0)?.toUpperCase() || "P";
+  const username = profile?.username || storedUser?.username || "Пользователь";
+  const publicId = profile?.publicId || storedUser?.publicId || "publicid";
+  const avatarUrl = profile?.avatarUrl || "";
+  const avatarLetter = username?.charAt(0)?.toUpperCase() || "P";
 
   return (
     <div
@@ -165,31 +194,41 @@ function SettingsPage() {
               marginBottom: 18,
             }}
           >
-            <div
-              style={{
-                width: 56,
-                height: 56,
-                borderRadius: "50%",
-                background: "linear-gradient(180deg, #c35bff 0%, #8c14ff 100%)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                color: "#fff",
-                fontSize: 28,
-                fontWeight: 700,
-                flexShrink: 0,
-              }}
-            >
-              {avatarLetter}
-            </div>
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="avatar"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  objectFit: "cover",
+                  flexShrink: 0,
+                }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: "50%",
+                  background: "linear-gradient(180deg, #c35bff 0%, #8c14ff 100%)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: "#fff",
+                  fontSize: 28,
+                  fontWeight: 700,
+                  flexShrink: 0,
+                }}
+              >
+                {avatarLetter}
+              </div>
+            )}
 
             <div>
-              <div style={{ fontSize: 22, fontWeight: 700 }}>
-                {user?.username || "Пользователь"}
-              </div>
-              <div style={{ fontSize: 15, color: palette.muted }}>
-                @{user?.publicId || "publicid"}
-              </div>
+              <div style={{ fontSize: 22, fontWeight: 700 }}>{username}</div>
+              <div style={{ fontSize: 15, color: palette.muted }}>@{publicId}</div>
             </div>
           </div>
 

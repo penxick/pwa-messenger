@@ -235,7 +235,7 @@ function ProfilePage() {
         username: data.username,
         publicId: data.publicId,
         email: data.email,
-      };
+        };
 
       localStorage.setItem("user", JSON.stringify(updatedUser));
 
