@@ -9,15 +9,15 @@ spring:
 
   datasource:
     url: jdbc:postgresql://localhost:5432/PenxMessenger_bd
-    username: postgres
-    password: 89504164826roman
+    username: ""
+    password: ""
     driver-class-name: org.postgresql.Driver
 
   mail:
     host: ${MAIL_HOST:postbox.cloud.yandex.net}
     port: ${MAIL_PORT:587}
-    username: ajeomk6kdh39fnctqh4s
-    password: AQVN2LUNRsRpfdndRJzpRUGyI08sczokSIMP_c-c
+    username: ""
+    password: ""
     from: ${MAIL_FROM:no-reply@penxio.ru}
     properties:
       mail:
