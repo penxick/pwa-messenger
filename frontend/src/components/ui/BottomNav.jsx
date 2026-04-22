@@ -1,13 +1,40 @@
 import { NavLink } from "react-router-dom";
 
-function BottomNav() {
+function BottomNav({ palette }) {
+  const colors =
+    palette || {
+      navBg: "#061126",
+      border: "#13294d",
+      accent: "#a100ff",
+      muted: "#8f96aa",
+      text: "#ffffff",
+    };
+
   return (
-    <nav style={navStyle}>
+    <nav
+      style={{
+        position: "fixed",
+        bottom: 0,
+        width: "100%",
+        maxWidth: 390,
+        height: 72,
+        background: colors.navBg,
+        borderTop: `1px solid ${colors.border}`,
+        display: "flex",
+        justifyContent: "space-around",
+        alignItems: "center",
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        boxSizing: "border-box",
+      }}
+    >
       <NavLink
         to="/chats"
         style={({ isActive }) => ({
-          ...linkStyle,
-          color: isActive ? "#b12cff" : "#8f96aa",
+          textDecoration: "none",
+          fontSize: 18,
+          fontWeight: 500,
+          color: isActive ? colors.accent : colors.muted,
         })}
       >
         Чаты
@@ -16,8 +43,10 @@ function BottomNav() {
       <NavLink
         to="/settings"
         style={({ isActive }) => ({
-          ...linkStyle,
-          color: isActive ? "#b12cff" : "#8f96aa",
+          textDecoration: "none",
+          fontSize: 18,
+          fontWeight: 500,
+          color: isActive ? colors.accent : colors.muted,
         })}
       >
         Настройки
@@ -25,26 +54,5 @@ function BottomNav() {
     </nav>
   );
 }
-
-const navStyle = {
-  position: "fixed",
-  bottom: 0,
-  width: "100%",
-  maxWidth: 390,
-  height: 72,
-  background: "#071226",
-  borderTop: "1px solid rgba(255,255,255,0.08)",
-  display: "flex",
-  justifyContent: "space-around",
-  alignItems: "center",
-  borderTopLeftRadius: 24,
-  borderTopRightRadius: 24,
-};
-
-const linkStyle = {
-  textDecoration: "none",
-  fontSize: 18,
-  fontWeight: 500,
-};
 
 export default BottomNav;

@@ -8,6 +8,7 @@ import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import ThemePage from "./pages/ThemePage";
 import ChatThemePage from "./pages/ChatThemePage";
+import UserProfilePage from "./pages/UserProfilePage";
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/theme" element={<ThemePage />} />
         <Route path="/chat-theme" element={<ChatThemePage />} />
+        <Route path="/users/:userId" element={<UserProfilePage />} />
       </Routes>
     </BrowserRouter>
   );
